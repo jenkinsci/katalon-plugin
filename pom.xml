@@ -28,8 +28,7 @@
         -->
         <junit.plugin.version>1.20</junit.plugin.version>
         <jackson.version>2.13.13</jackson.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
-        <utils.version>1.0.17</utils.version>
+        <utils.version>1.0.18</utils.version>
         <httpclient.version>4.5.13</httpclient.version>
     </properties>
 
