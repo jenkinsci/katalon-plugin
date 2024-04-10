@@ -115,8 +115,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>${java.level}</source>
-                    <target>${java.level}</target>
+                    <maven.compiler.release>${java.level}<maven.compiler.release>
                 </configuration>
             </plugin>
         </plugins>
