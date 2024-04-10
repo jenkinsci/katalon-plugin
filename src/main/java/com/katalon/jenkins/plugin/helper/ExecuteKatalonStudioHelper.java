@@ -7,6 +7,7 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
+import hudson.remoting.VirtualChannel;
 import jenkins.security.MasterToSlaveCallable;
 
 import java.util.HashMap;
@@ -26,7 +27,11 @@ public class ExecuteKatalonStudioHelper {
             String xvfbConfiguration) {
         Logger logger = new JenkinsLogger(taskListener);
         try {
-            return launcher.getChannel().call(new MasterToSlaveCallable<Boolean, Exception>() {
+            VirtualChannel channel = launcher.getChannel();
+            if (channel == null) {
+                throw new Exception("Channel not found!");
+            }
+            return channel.call(new MasterToSlaveCallable<Boolean, Exception>() {
                 @Override
                 public Boolean call() throws Exception {
 
