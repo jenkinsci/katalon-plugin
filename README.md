@@ -12,9 +12,15 @@ To learn more about using this plugin, you can refer to the following documents:
 
 ## Development
 
+Use `mvn` version from `3.8.1`.
+
 Use the command `mvn clean hpi:run -Djetty.port=8090` to debug the plugin.
 
 See the instructions at https://wiki.jenkins.io/display/JENKINS/Plugin+tutorial.
+
+### Requisition
+
+Jenkins: 2.492.3
 
 ## Companion products
 
