@@ -11,7 +11,7 @@
 
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>katalon</artifactId>
-    <version>1.0.34</version>
+    <version>1.0.38-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>Katalon Plugin</name>
     <description>Execute Katalon Studio in Jenkins</description>
@@ -22,29 +22,16 @@
         <jenkins.baseline>2.492</jenkins.baseline>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
         <jenkins.version>${jenkins.baseline}.3</jenkins.version>
-        <java.level>8</java.level>
+        <java.level>17</java.level>
         <!-- Other properties you may want to use:
              ~ java.level: set to 6 if your jenkins.version <= 1.611 ~ jenkins-test-harness.version: Jenkins Test Harness version you use to test the plugin. For Jenkins version >= 1.580.1 use JTH 2.0 or higher.
              ~ hpi-plugin.version: The HPI Maven Plugin version used by the plugin..
              ~ stapler-plugin.version: The Stapler Maven plugin version required by the plugin.
         -->
         <junit.plugin.version>1.20</junit.plugin.version>
-        <jackson.version>2.13.13</jackson.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
-        <utils.version>1.0.17</utils.version>
+        <utils.version>1.0.18</utils.version>
         <httpclient.version>4.5.13</httpclient.version>
     </properties>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-${jenkins.baseline}.x</artifactId>
-                <version>5324.v88b_4300d0dd9</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <!-- The default licence for Jenkins OSS Plugins is MIT. Substitute for the applicable one if needed. -->
 
@@ -61,11 +48,11 @@
     </organization>
 
     <scm>
-      <connection>scm:git:https://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
-      <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
-      <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
-      <tag>HEAD</tag>
-  </scm>
+        <connection>scm:git:https://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
+        <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <repositories>
         <repository>
@@ -84,6 +71,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>junit</artifactId>
+            <version>${junit.plugin.version}</version>
         </dependency>
 <!--         <dependency>
             <groupId>org.jenkins-ci.main</groupId>
@@ -102,6 +90,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>plain-credentials</artifactId>
+            <version>1.3</version>
         </dependency>
     </dependencies>
 
