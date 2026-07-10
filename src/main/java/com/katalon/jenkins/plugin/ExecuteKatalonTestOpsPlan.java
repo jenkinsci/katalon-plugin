@@ -143,7 +143,7 @@ public class ExecuteKatalonTestOpsPlan extends Builder implements SimpleBuildSte
     }
 
     @Override
-    public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+    public boolean configure(StaplerRequest2 req, JSONObject formData) throws FormException {
       req.bindJSON(this, formData);
       save();
       return super.configure(req, formData);
@@ -321,7 +321,7 @@ public class ExecuteKatalonTestOpsPlan extends Builder implements SimpleBuildSte
     }
 
     @Override
-    public Builder newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+    public Builder newInstance(StaplerRequest2 req, JSONObject formData) throws FormException {
       String credentialsId = formData.getString("credentialsId");
       return new ExecuteKatalonTestOpsPlan(
           credentialsId,
