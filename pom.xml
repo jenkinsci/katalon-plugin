@@ -11,7 +11,7 @@
 
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>katalon</artifactId>
-    <version>1.0.38-SNAPSHOT</version>
+    <version>1.0.38</version>
     <packaging>hpi</packaging>
     <name>Katalon Plugin</name>
     <description>Execute Katalon Studio in Jenkins</description>
@@ -51,7 +51,7 @@
         <connection>scm:git:https://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
-        <tag>HEAD</tag>
+        <tag>katalon-1.0.38</tag>
     </scm>
 
     <repositories>
