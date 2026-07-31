@@ -12,7 +12,6 @@ import jenkins.security.MasterToSlaveCallable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ExecuteKatalonStudioHelper {
 
@@ -37,10 +36,9 @@ public class ExecuteKatalonStudioHelper {
                     location, executeArgs, x11Display, xvfbConfiguration));
         } catch (InterruptedException e) {
             logger.info("Katalon execution was interrupted");
-            throw e; // Re-throw InterruptedException to maintain cancellation behavior
+            throw e;
         } catch (Exception e) {
-            String stackTrace = Throwables.getStackTraceAsString(e);
-            logger.info(stackTrace);
+            logger.info(Throwables.getStackTraceAsString(e));
             return false;
         }
     }
@@ -55,11 +53,11 @@ public class ExecuteKatalonStudioHelper {
         private final String executeArgs;
         private final String x11Display;
         private final String xvfbConfiguration;
-        private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
         public InterruptibleKatalonCallable(TaskListener taskListener, FilePath workspace,
-                                            EnvVars buildEnvironment, Logger logger, String version, String location,
-                                            String executeArgs, String x11Display, String xvfbConfiguration) {
+                                            EnvVars buildEnvironment, Logger logger, String version,
+                                            String location, String executeArgs,
+                                            String x11Display, String xvfbConfiguration) {
             this.taskListener = taskListener;
             this.workspace = workspace;
             this.buildEnvironment = buildEnvironment;
@@ -75,7 +73,6 @@ public class ExecuteKatalonStudioHelper {
         public Boolean call() throws Exception {
             Logger logger = new JenkinsLogger(taskListener);
 
-            // Check for interruption at the start
             if (Thread.currentThread().isInterrupted()) {
                 logger.info("Thread was interrupted before Katalon execution started");
                 throw new InterruptedException("Execution was cancelled");
@@ -92,25 +89,20 @@ public class ExecuteKatalonStudioHelper {
                 return false;
             }
 
-            Map<String, String> environmentVariables = new HashMap<>();
-            environmentVariables.putAll(System.getenv());
-            buildEnvironment.entrySet()
-                    .forEach(entry -> environmentVariables.put(entry.getKey(), entry.getValue()));
+            Map<String, String> environmentVariables = new HashMap<>(System.getenv());
+            buildEnvironment.forEach(environmentVariables::put);
 
-            // Check for interruption before starting Katalon
             if (Thread.currentThread().isInterrupted()) {
                 logger.info("Task was interrupted before executing Katalon");
                 throw new InterruptedException("Execution was cancelled");
             }
 
             try {
-                // Create a wrapper that can be interrupted
                 return executeKatalonWithInterruption(
                         logger, version, location, workspaceLocation,
                         executeArgs, x11Display, xvfbConfiguration, environmentVariables);
             } catch (InterruptedException e) {
                 logger.info("Katalon execution was interrupted due to build cancellation");
-                cancelled.set(true);
                 throw e;
             }
         }
@@ -120,54 +112,71 @@ public class ExecuteKatalonStudioHelper {
                 String executeArgs, String x11Display, String xvfbConfiguration,
                 Map<String, String> environmentVariables) throws Exception {
 
-            // Create a thread to run Katalon execution
-            final Exception[] executionException = new Exception[1];
-            final Boolean[] result = new Boolean[1];
+            // Phase 1: Setup — KatalonUtils may block here (e.g., downloading Katalon).
+            // Run in a thread so the stop signal can still be honored during this phase.
+            final Process[] processHolder = {null};
+            final Exception[] setupException = {null};
 
-            Thread katalonThread = new Thread(() -> {
+            Thread setupThread = new Thread(() -> {
                 try {
-                    result[0] = KatalonUtils.executeKatalon(
+                    processHolder[0] = KatalonUtils.executeKatalonProcess(
                             logger, version, location, workspaceLocation,
                             executeArgs, x11Display, xvfbConfiguration, environmentVariables);
                 } catch (Exception e) {
-                    executionException[0] = e;
+                    setupException[0] = e;
                 }
             });
+            setupThread.start();
 
-            katalonThread.start();
-
-            // Monitor for interruption while Katalon is running
-            while (katalonThread.isAlive()) {
+            while (processHolder[0] == null && setupThread.isAlive()) {
                 if (Thread.currentThread().isInterrupted()) {
-                    logger.info("Build cancellation detected, interrupting Katalon execution");
-
-                    // Interrupt the Katalon thread
-                    katalonThread.interrupt();
-
-                    // Wait a bit for graceful shutdown
-                    try {
-                        katalonThread.join(5000); // Wait up to 5 seconds
-                    } catch (InterruptedException ie) {
-                        // If we're interrupted while waiting, force stop
-                        Thread.currentThread().interrupt();
-                    }
-                    throw new InterruptedException("Katalon execution was cancelled");
+                    logger.info("Build cancellation detected during Katalon setup");
+                    setupThread.interrupt();
+                    setupThread.join(3000);
+                    throw new InterruptedException("Cancelled during Katalon setup");
                 }
-
                 try {
-                    Thread.sleep(1000); // Check every second
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    // If interrupted while sleeping, interrupt Katalon and exit
-                    katalonThread.interrupt();
+                    logger.info("Build cancellation detected during Katalon setup");
+                    setupThread.interrupt();
                     throw e;
                 }
             }
 
-            // Check if there was an exception during execution
-            if (executionException[0] != null) {
-                throw executionException[0];
+            if (setupException[0] != null) {
+                throw setupException[0];
             }
-            return result[0] != null ? result[0] : false;
+
+            Process katalonProcess = processHolder[0];
+            if (katalonProcess == null) {
+                return false;
+            }
+
+            // Phase 2: Process is running — waitFor() throws InterruptedException
+            // automatically when Jenkins interrupts the thread on build stop.
+            try {
+                int exitCode = katalonProcess.waitFor();
+                return exitCode == 0;
+            } catch (InterruptedException e) {
+                logger.info("Build cancellation detected, killing Katalon process tree");
+                killProcessTree(katalonProcess, logger);
+                throw e;
+            }
+        }
+
+        /**
+         * Kills the entire process tree rooted at {@code process}: descendants first
+         * (deepest children before parents), then the root process itself.
+         */
+        private static void killProcessTree(Process process, Logger logger) {
+            process.descendants().forEach(ph -> {
+                logger.info("Killing child process: " + ph.pid()
+                        + ph.info().command().map(c -> " (" + c + ")").orElse(""));
+                ph.destroyForcibly();
+            });
+            logger.info("Killing Katalon process: " + process.pid());
+            process.destroyForcibly();
         }
     }
 }
