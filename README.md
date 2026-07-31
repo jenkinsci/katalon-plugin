@@ -1,12 +1,12 @@
 # Katalon Plugin for Jenkins
 
-Katalon Plugin for Jenkins helps integrate Katalon Studio and Katalon TestOps with Jenkins easily. Katalon Studio will be downloaded and deployed automatically.
+Katalon Plugin for Jenkins helps integrate Katalon Runtime Engine (KRE) and Katalon TestOps with Jenkins easily. KRE will be downloaded and deployed automatically.
 
 ## Tutorials
 
 To learn more about using this plugin, you can refer to the following documents:
 
-[Integrate Katalon Studio with Jenkins](https://docs.katalon.com/katalon-studio/docs/jenkins-integration-overview.html#jenkins-integration).
+[Integrate KRE with Jenkins](https://docs.katalon.com/katalon-studio/docs/jenkins-integration-overview.html#jenkins-integration).
 
 [Integrate Katalon TestOps with Jenkins](https://docs.katalon.com/katalon-analytics/docs/ka-integration-jenkins.html).
 

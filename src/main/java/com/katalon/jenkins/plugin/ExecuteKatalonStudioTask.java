@@ -1,11 +1,15 @@
 package com.katalon.jenkins.plugin;
 
-import com.katalon.jenkins.plugin.helper.ExecuteKatalonStudioHelper;
+import com.katalon.jenkins.plugin.helper.JenkinsLogger;
+import com.katalon.utils.Logger;
+
+import com.google.common.base.Throwables;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
+import hudson.remoting.VirtualChannel;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import jenkins.tasks.SimpleBuildStep;
@@ -16,6 +20,9 @@ import org.kohsuke.stapler.StaplerRequest2;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.UUID;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class ExecuteKatalonStudioTask extends Builder implements SimpleBuildStep {
 
@@ -86,10 +93,11 @@ public class ExecuteKatalonStudioTask extends Builder implements SimpleBuildStep
     @Override
     public boolean perform(AbstractBuild<?, ?> abstractBuild, Launcher launcher, BuildListener buildListener)
         throws InterruptedException, IOException {
+        Logger logger = new JenkinsLogger(buildListener);
 
         // Check for interruption before starting
         if (isInterrupted()) {
-            buildListener.getLogger().println("Build was cancelled before Katalon execution started");
+            logger.info("Build was cancelled before KRE started");
             throw new InterruptedException("Build was cancelled");
         }
 
@@ -102,10 +110,11 @@ public class ExecuteKatalonStudioTask extends Builder implements SimpleBuildStep
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher,
                         @Nonnull TaskListener taskListener)
         throws InterruptedException, IOException {
+        Logger logger = new JenkinsLogger(taskListener);
 
         // Check for interruption before starting
         if (isInterrupted()) {
-            taskListener.getLogger().println("Build was cancelled before Katalon execution started");
+            logger.info("Build was cancelled before KRE started");
             throw new InterruptedException("Build was cancelled");
         }
 
@@ -115,22 +124,40 @@ public class ExecuteKatalonStudioTask extends Builder implements SimpleBuildStep
 
     private boolean doPerform(FilePath workspace, EnvVars buildEnvironment,
                               Launcher launcher, TaskListener taskListener)
-        throws IOException, InterruptedException {
+        throws InterruptedException {
 
+        Logger logger = new JenkinsLogger(taskListener);
         try {
-            return ExecuteKatalonStudioHelper.executeKatalon(
-                    workspace,
-                    buildEnvironment,
-                    launcher,
-                    taskListener,
-                    version,
-                    location,
-                    executeArgs,
-                    x11Display,
-                    xvfbConfiguration);
+            VirtualChannel channel = launcher.getChannel();
+            if (channel == null) {
+                throw new Exception("Channel not found!");
+            }
+
+            String processMarker = UUID.randomUUID().toString();
+            Future<Boolean> result = channel.callAsync(new InterruptibleCallable(
+                    taskListener, workspace, buildEnvironment, version,
+                    location, executeArgs, x11Display, xvfbConfiguration, processMarker));
+            try {
+                return result.get();
+            } catch (InterruptedException e) {
+                // Don't cancel the remote call: stop KRE gracefully and wait for it, so that the
+                // remote logs are not lost when Jenkins finishes the aborted build.
+                logger.info("Build was interrupted, stopping KRE");
+                channel.call(new InterruptibleCallable.StopCallable(taskListener, processMarker));
+
+                try {
+                    result.get(10, TimeUnit.SECONDS);
+                } catch (Exception ignored) {
+                    // KRE is already stopped; the outcome no longer matters
+                }
+
+                throw e;
+            }
         } catch (InterruptedException e) {
-            taskListener.getLogger().println("Katalon execution was interrupted due to build cancellation");
-            throw e; // Re-throw to ensure proper build status
+            throw e;
+        } catch (Exception e) {
+            logger.info(Throwables.getStackTraceAsString(e));
+            return false;
         }
     }
 

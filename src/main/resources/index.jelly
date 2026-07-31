@@ -1,4 +1,4 @@
 <?jelly escape-by-default='true'?>
 <div>
-   Execute Katalon Studio in Jenkins
+   Execute Katalon Runtime Engine (KRE) in Jenkins
 </div>

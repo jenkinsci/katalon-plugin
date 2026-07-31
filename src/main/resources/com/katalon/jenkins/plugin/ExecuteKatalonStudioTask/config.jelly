@@ -2,14 +2,14 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
     <f:block>
-        <div class="help" style="display: block">Katalon TestOps CI is the easier way to execute or schedule remote Katalon Studio executions. <a target="_blank" href="https://docs.katalon.com/katalon-analytics/docs/kt-remote-execution.html">Learn more</a></div>
+        <div class="help" style="display: block">Katalon TestOps CI is the easier way to execute or schedule remote KRE executions. <a target="_blank" href="https://docs.katalon.com/katalon-analytics/docs/kt-remote-execution.html">Learn more</a></div>
     </f:block>
 
-    <f:entry title="Download Katalon Studio version" field="version">
+    <f:entry title="Download KRE version" field="version">
         <f:textbox />
     </f:entry>
 
-    <f:entry title="Use pre-installed Katalon Studio" field="location">
+    <f:entry title="Use pre-installed KRE" field="location">
         <f:textbox />
     </f:entry>
 
